@@ -27,7 +27,7 @@ class SongController {
   	  ["genre", "artist", "year", "name"].each {
   	    query.addFacetField(Song.solrFieldName(it))  
   	  }
-      query.setFacetMinCount(1)
+      query.setFacetMinCount(2)
       query.setFacetLimit(10)
       
   	  [result:Song.searchSolr(query), q:params.q, fq: fq, solrQueryUrl: query.toString()]
@@ -46,7 +46,13 @@ class SongController {
     }
 
     def save = {
+        def genre = Genre.findByName(params.genre)
+        if(!genre) 
+          genre = new Genre(name: params.genre)
+        params.genre = genre
         def songInstance = new Song(params)
+
+        songInstance.genre = genre
         if (songInstance.save(flush: true)) {
             flash.message = "${message(code: 'default.created.message', args: [message(code: 'song.label', default: 'Song'), songInstance.id])}"
             redirect(action: "show", id: songInstance.id)
@@ -67,7 +73,7 @@ class SongController {
         }
     }
 
-    def edit = {
+    def edit = {    
         def songInstance = Song.get(params.id)
         if (!songInstance) {
             flash.message = "${message(code: 'default.not.found.message', args: [message(code: 'song.label', default: 'Song'), params.id])}"
@@ -79,6 +85,10 @@ class SongController {
     }
 
     def update = {
+        def genre = Genre.findByName(params.genre)
+        if(!genre) 
+          genre = new Genre(name: params.genre).save(flush:true)
+        params.genre = genre      
         def songInstance = Song.get(params.id)
         if (songInstance) {
             if (params.version) {
